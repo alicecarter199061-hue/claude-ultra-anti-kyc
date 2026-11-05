@@ -1,0 +1,48 @@
+# ==============================================================================
+# Claude & Anthropic 本地黑洞拦截列表 (Claude Blackhole Hosts)
+# 作用: 拦截本机所有程序对 Claude / Anthropic 的直接联网行为，杜绝多出口漏网与 DNS 泄露
+# 配合 VPS 内网代理（Tailscale + HTTP/SOCKS5）使用：代理在远端解析 DNS，本机 hosts 拦截不影响代理通道
+# ==============================================================================
+
+# --- Anthropic 官方核心域 ---
+127.0.0.1 anthropic.com
+127.0.0.1 www.anthropic.com
+127.0.0.1 api.anthropic.com
+127.0.0.1 console.anthropic.com
+127.0.0.1 docs.anthropic.com
+127.0.0.1 support.anthropic.com
+127.0.0.1 status.anthropic.com
+127.0.0.1 research.anthropic.com
+
+# --- Claude 核心业务与应用域 ---
+127.0.0.1 claude.ai
+127.0.0.1 www.claude.ai
+127.0.0.1 app.claude.ai
+127.0.0.1 api.claude.ai
+127.0.0.1 web.claude.ai
+127.0.0.1 static.claude.ai
+127.0.0.1 assets.claude.ai
+127.0.0.1 accounts.claude.ai
+127.0.0.1 auth.claude.ai
+127.0.0.1 billing.claude.ai
+
+# --- Claude 用户生成内容与渲染沙盒 (Artifacts / User Content) ---
+127.0.0.1 claude.usercontent.com
+127.0.0.1 cdn.claude.usercontent.com
+127.0.0.1 assets.claude.usercontent.com
+127.0.0.1 media.claude.usercontent.com
+
+# --- 遥测、崩溃收集、灰度测试与行为分析 (Telemetry & Analytics) ---
+# 注意: 这些追踪域名也是风控收集客户端设备指纹的重要入口
+127.0.0.1 statsig.anthropic.com
+127.0.0.1 events.statsigapi.net
+127.0.0.1 api.statsig.com
+127.0.0.1 browser-intake-datadoghq.com
+127.0.0.1 o33544.ingest.sentry.io
+127.0.0.1 o1157140.ingest.sentry.io
+127.0.0.1 cdn.usefathom.com
+127.0.0.1 api.segment.io
+127.0.0.1 cdn.segment.com
+127.0.0.1 api-iam.intercom.io
+127.0.0.1 nexus-websocket-a.intercom.io
+127.0.0.1 nexus-websocket-b.intercom.io
