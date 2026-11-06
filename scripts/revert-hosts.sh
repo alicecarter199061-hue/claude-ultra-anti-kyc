@@ -18,15 +18,24 @@ BACKUP_PATH="/etc/hosts.revert.bak.$(date +%Y%m%d%H%M%S)"
 sudo cp -p "$HOSTS_FILE" "$BACKUP_PATH"
 echo "[+] 已创建移除前备份: $BACKUP_PATH"
 
-sudo sed -i.tmp "/$MARKER_START/,/$MARKER_END/d" "$HOSTS_FILE"
-sudo rm -f "${HOSTS_FILE}.tmp"
+sudo awk -v s="$MARKER_START" -v e="$MARKER_END" '
+    $0 == s { skip=1; next }
+    $0 == e { skip=0; next }
+    !skip { print }
+' "$HOSTS_FILE" | sudo tee "${HOSTS_FILE}.clean" >/dev/null
+sudo cp -p "${HOSTS_FILE}.clean" "$HOSTS_FILE"
+sudo rm -f "${HOSTS_FILE}.clean"
 
 # 刷新本机 DNS 缓存
 if [[ "$(uname)" == "Darwin" ]]; then
     sudo dscacheutil -flushcache || true
     sudo killall -HUP mDNSResponder || true
+elif command -v resolvectl >/dev/null 2>&1; then
+    sudo resolvectl flush-caches || true
 elif command -v systemd-resolve >/dev/null 2>&1; then
     sudo systemd-resolve --flush-caches || true
+elif command -v nscd >/dev/null 2>&1; then
+    sudo nscd -i hosts || true
 fi
 
 echo "[✓] 已成功移除 Claude 黑洞规则，DNS 缓存已刷新。"

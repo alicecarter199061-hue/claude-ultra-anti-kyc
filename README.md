@@ -49,14 +49,15 @@
 
 ---
 
-## ✨ 相对原方案的 4 项关键优化
+## ✨ 相对原方案的 5 项关键优化
 
 | 维度 | 原推文粗糙做法 | 本项目深度优化改进 |
 |---|---|---|
-| **WebRTC 防泄漏** | 仅使用 Chrome `--proxy-server`，**WebRTC STUN 仍然直连泄露真实 IP** | 引入 `--webrtc-ip-handling-policy=disable_non_proxied_udp` 彻底阻断 UDP 旁路泄露 |
-| **黑洞拦截覆盖度** | 手动配几条域名，容易遗漏二级域与追踪域 | 整理汇总完整的官方业务域、Artifacts 域与三方遥测/崩溃收集完整黑洞清单 |
-| **时区/Locale 防护** | 未做防护，Node.js 运行时直接暴露国内时区 | Claude Code 包装器自动注入 `TZ=Asia/Tokyo`（对齐出口），消除时区风控扣分 |
-| **工程化体验** | 全程手动敲复杂命令与编辑 hosts | 提供自动化部署、安全备份还原、一键浏览器拉起与一键健康自检脚本 |
+| **WebRTC 防泄漏** | 仅使用 Chrome `--proxy-server`，**WebRTC STUN 仍然直连泄露真实 IP** | 引入 `--webrtc-ip-handling-policy=disable_non_proxied_udp` 阻断非代理 UDP，同时完整保留 Chromium mDNS 局域网遮盖，杜绝泄露 |
+| **黑洞拦截覆盖度** | 手动配几条域名，仅填 IPv4 | 整理 30+ 核心业务域、Artifacts 沙盒域及 Sentry/Statsig/Datadog 遥测域，**全面支持 IPv4 (127.0.0.1) 与 IPv6 (::1) 双栈拦截**，防 Happy Eyeballs 绕过 |
+| **远端代理健壮性** | 原生配置容易在公网暴露或出站死锁 | Tinyproxy 严格仅在 Tailscale 内网网卡监听（`Listen $TS_IP`），剥离 `Via` 特征头，配置 systemd 依赖 `tailscaled.service` 自动重启 |
+| **时区/Locale 防护** | 未做防护，Node.js 运行时直接暴露国内时区 | 启动器自动注入 `TZ=Asia/Tokyo`（与出口节点一致），macOS 浏览器追加 `-AppleLanguages` 强制英文，消除时区风控扣分 |
+| **工程化体验** | 全程手动敲复杂命令与编辑 hosts | 提供自动化部署、安全备份还原、一键浏览器拉起、Shell 环境注入与双栈健康自检脚本 |
 
 ---
 
@@ -109,14 +110,19 @@ PROXY_URL="http://100.x.x.x:8080" ./scripts/launch-claude-browser.sh
 
 ### 步骤 4：启动 Claude Code (CLI)
 
-运行环境包装器启动 Claude Code：
-
+方式 A：直接拉起 Claude Code（如果已在 PATH 中安装）：
 ```bash
 CLAUDE_PROXY_URL="http://100.x.x.x:8080" ./scripts/claude-code-env.sh
 ```
 
+方式 B：向当前终端会话注入安全环境变量（推荐日常开发）：
+```bash
+CLAUDE_PROXY_URL="http://100.x.x.x:8080" source ./scripts/claude-code-env.sh
+claude
+```
+
 脚本自动注入：
-- 官方企业代理：`HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY`
+- 官方企业代理：同时导出大写及小写 `HTTP_PROXY` / `http_proxy`、`HTTPS_PROXY` / `https_proxy`、`ALL_PROXY` / `all_proxy`
 - 遥测拦截：`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`、`DISABLE_TELEMETRY=1`
 - 时区对齐：`TZ=Asia/Tokyo`（或对应 VPS 时区）
 

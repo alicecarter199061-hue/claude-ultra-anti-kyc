@@ -1,48 +1,96 @@
 # ==============================================================================
 # Claude & Anthropic 本地黑洞拦截列表 (Claude Blackhole Hosts)
 # 作用: 拦截本机所有程序对 Claude / Anthropic 的直接联网行为，杜绝多出口漏网与 DNS 泄露
+# 包含 IPv4 (127.0.0.1) 与 IPv6 (::1) 双栈拦截，防止 Happy Eyeballs 经 IPv6 绕过黑洞
 # 配合 VPS 内网代理（Tailscale + HTTP/SOCKS5）使用：代理在远端解析 DNS，本机 hosts 拦截不影响代理通道
 # ==============================================================================
 
-# --- Anthropic 官方核心域 ---
+# --- Anthropic 官方核心域 (IPv4 + IPv6) ---
 127.0.0.1 anthropic.com
+::1       anthropic.com
 127.0.0.1 www.anthropic.com
+::1       www.anthropic.com
 127.0.0.1 api.anthropic.com
+::1       api.anthropic.com
 127.0.0.1 console.anthropic.com
+::1       console.anthropic.com
 127.0.0.1 docs.anthropic.com
+::1       docs.anthropic.com
 127.0.0.1 support.anthropic.com
+::1       support.anthropic.com
 127.0.0.1 status.anthropic.com
+::1       status.anthropic.com
 127.0.0.1 research.anthropic.com
+::1       research.anthropic.com
+127.0.0.1 platform.anthropic.com
+::1       platform.anthropic.com
 
-# --- Claude 核心业务与应用域 ---
+# --- Claude 核心业务与应用域 (IPv4 + IPv6) ---
 127.0.0.1 claude.ai
+::1       claude.ai
 127.0.0.1 www.claude.ai
+::1       www.claude.ai
 127.0.0.1 app.claude.ai
+::1       app.claude.ai
 127.0.0.1 api.claude.ai
+::1       api.claude.ai
 127.0.0.1 web.claude.ai
+::1       web.claude.ai
 127.0.0.1 static.claude.ai
+::1       static.claude.ai
 127.0.0.1 assets.claude.ai
+::1       assets.claude.ai
 127.0.0.1 accounts.claude.ai
+::1       accounts.claude.ai
 127.0.0.1 auth.claude.ai
+::1       auth.claude.ai
 127.0.0.1 billing.claude.ai
+::1       billing.claude.ai
+127.0.0.1 claude.com
+::1       claude.com
+127.0.0.1 www.claude.com
+::1       www.claude.com
+127.0.0.1 platform.claude.com
+::1       platform.claude.com
 
 # --- Claude 用户生成内容与渲染沙盒 (Artifacts / User Content) ---
 127.0.0.1 claude.usercontent.com
+::1       claude.usercontent.com
 127.0.0.1 cdn.claude.usercontent.com
+::1       cdn.claude.usercontent.com
 127.0.0.1 assets.claude.usercontent.com
+::1       assets.claude.usercontent.com
 127.0.0.1 media.claude.usercontent.com
+::1       media.claude.usercontent.com
 
 # --- 遥测、崩溃收集、灰度测试与行为分析 (Telemetry & Analytics) ---
 # 注意: 这些追踪域名也是风控收集客户端设备指纹的重要入口
 127.0.0.1 statsig.anthropic.com
+::1       statsig.anthropic.com
 127.0.0.1 events.statsigapi.net
+::1       events.statsigapi.net
 127.0.0.1 api.statsig.com
+::1       api.statsig.com
 127.0.0.1 browser-intake-datadoghq.com
+::1       browser-intake-datadoghq.com
+127.0.0.1 http-intake.logs.datadoghq.com
+::1       http-intake.logs.datadoghq.com
 127.0.0.1 o33544.ingest.sentry.io
+::1       o33544.ingest.sentry.io
 127.0.0.1 o1157140.ingest.sentry.io
+::1       o1157140.ingest.sentry.io
 127.0.0.1 cdn.usefathom.com
+::1       cdn.usefathom.com
 127.0.0.1 api.segment.io
+::1       api.segment.io
 127.0.0.1 cdn.segment.com
+::1       cdn.segment.com
 127.0.0.1 api-iam.intercom.io
+::1       api-iam.intercom.io
+127.0.0.1 widget.intercom.io
+::1       widget.intercom.io
 127.0.0.1 nexus-websocket-a.intercom.io
+::1       nexus-websocket-a.intercom.io
 127.0.0.1 nexus-websocket-b.intercom.io
+::1       nexus-websocket-b.intercom.io
+
