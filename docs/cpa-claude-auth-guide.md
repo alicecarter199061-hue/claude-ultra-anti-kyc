@@ -13,7 +13,36 @@
 
 ---
 
-## 方案一：提取 1 年长效 Setup-Token 并注入 CPA（最推荐，永久免掉号）
+## ⚡ 极速方案：在 Sakura VPS 服务端一键提取并配入（最推荐）
+
+我们在 Sakura VPS 端已部署了专属交互式工具 `cpa-setup-token`，本地电脑**完全无需安装 Node.js 或 Claude CLI**，直接由 VPS 服务端完成同源签发与热加载。
+
+### 操作步骤（仅需 2 步）：
+
+1. **在 VPS 终端执行命令**：
+   ```bash
+   cpa-setup-token
+   ```
+   终端会当场打印出专属的 1 年长效 OAuth 授权 URL：
+   ```text
+   👉 步骤 1：请复制以下授权链接，在挂载了樱花 VPS 代理的指纹浏览器中打开：
+   https://claude.ai/oauth/authorize?code=true&client_id=...
+   ```
+
+2. **指纹浏览器授权并回填**：
+   - 复制该链接，在您挂载了樱花代理（出口为 `49.212.144.166`）的指纹浏览器中打开；
+   - 登录您的 Claude 订阅账号并点击 **Authorize**；
+   - 授权成功后，网页会展示一段授权码（格式类似 `xxxx#yyyy`）；
+   - 将这段授权码复制，直接粘贴到 VPS 终端并回车！
+
+🎉 **大功告成**：
+- VPS 会以自身的日本原生 IP 直接向 Anthropic 换取 1 年长效令牌；
+- 自动生成合规的 `/home/debian/cpa/auth/claude-<id>.json` 并将权限设为 `600`；
+- CPA 网关 3 秒内自动热加载识别，管理面板直接上线，**整整一年免维护、零掉号风险**！
+
+---
+
+## 方案二：本地提取 1 年长效 Setup-Token 并注入 CPA
 
 官方 Claude CLI (`@anthropic-ai/claude-code`) 提供了长效订阅 Token 机制，生成有效期长达 **365 天**的访问令牌（无需 Refresh Token，永不轮换失效）。
 
