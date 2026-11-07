@@ -138,14 +138,35 @@ claude
 
 ---
 
+## ⚡ CPA 网关集成：配置 1 年长效 Key (Setup-Token)
+
+对于使用 **CPA (CLIProxyAPI)** 作为多模型网关的用户，常规短期 OAuth Token（Refresh Token Rotation）极易因为网络刷新竞争或多实例冲突导致“频繁掉号”。
+
+本项目完整支持将官方 Claude CLI 的 **1 年长效 Setup-Token** 免刷新接入 CPA 网关：
+
+1. **同源网络授权**：使用挂载樱花 VPS 代理的指纹浏览器，运行 `claude setup-token` 提取 `sk-ant-oat01-...` 长效令牌。
+2. **一键注入网关**：运行本项目提供的注入脚本：
+   ```bash
+   ./scripts/inject-claude-token-to-cpa.sh
+   ```
+   自动生成合规 JSON 凭据、锁定 365 天有效期并推送到 VPS 的 `/home/debian/cpa/auth/`，CPA 热加载即刻生效，**整整一年彻底免除掉号重新登录的烦恼**！
+
+📘 深度架构与实操手册：
+- [CPA 网关接入与长效 Key 配置手册 (3种方式对比)](docs/cpa-claude-auth-guide.md)
+- [ADR 0001: Claude 1年长效 Token 接入 CPA 架构裁决](docs/adr/0001-claude-setup-token-cpa-integration.md)
+- [领域术语表 (Domain Glossary)](GLOSSARY.md)
+
+---
+
 ## 🛠️ 脚本清单
 
-- `hosts/claude-blacklist.hosts`：全量 Claude / Anthropic 域拦截列表。
+- `hosts/claude-blacklist.hosts`：全量 Claude / Anthropic 域拦截列表 (IPv4 + IPv6 双栈)。
 - `scripts/apply-hosts.sh`：将黑洞规则安全合入 `/etc/hosts` 并刷新系统 DNS。
 - `scripts/revert-hosts.sh`：一键无损还原 `/etc/hosts` 到修改前状态。
 - `scripts/launch-claude-browser.sh`：防 WebRTC 泄露、隔离 Profile 的专用浏览器启动器。
 - `scripts/claude-code-env.sh`：Claude Code 企业级代理与反指纹包装器。
 - `scripts/self-check.sh`：本地环境、hosts 状态与出口 IP 连通性自检。
+- `scripts/inject-claude-token-to-cpa.sh`：将 Claude 1 年长效 Token 转换为 CPA 凭据并一键部署。
 - `server/setup-vps-proxy.sh`：远端 VPS Tailscale 极简代理一键配置。
 
 ---
