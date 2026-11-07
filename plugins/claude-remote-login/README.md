@@ -26,7 +26,7 @@ All actions use authenticated JSON POST under `/v0/management/plugins/claude-rem
 
 | Path | Body | Result |
 | --- | --- | --- |
-| `/start` | `{}` | `state`, authorization `url`, `expires_at` |
+| `/start` | `{"mode":"setup_token"}` (optional, default: `"setup_token"`; or `"oauth"`) | `state`, `mode`, authorization `url`, `expires_at` |
 | `/complete` | `{"state":"...","code":"code#state"}` | Connected account email |
 | `/cancel` | `{"state":"..."}` | Cancels an idle pending session |
 

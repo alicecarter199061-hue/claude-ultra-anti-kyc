@@ -272,9 +272,6 @@ func (s *service) acquire(session *loginSession, code, callbackID string) error 
 		}
 	}
 
-	if tokens.Account.Email == "" {
-		tokens.Account.Email = "claude-user@isolated.local"
-	}
 	if tokens.Account.UUID == "" {
 		h := sha1.Sum([]byte("claude-setup-token:" + tokens.AccessToken))
 		v67 := (uint16(h[6])<<8 | uint16(h[7]))&0x0fff | 0x5000
@@ -282,9 +279,14 @@ func (s *service) acquire(session *loginSession, code, callbackID string) error 
 		tokens.Account.UUID = fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
 			h[0:4], h[4:6], v67, v89, h[10:16])
 	}
-	identity := tokens.Organization.UUID
+	if tokens.Account.Email == "" {
+		accHash := sha256.Sum256([]byte(tokens.Account.UUID))
+		tokens.Account.Email = fmt.Sprintf("claude-%s@isolated.local", hex.EncodeToString(accHash[:])[:8])
+	}
+	// 凭据文件唯一哈希：优先采用 Account.UUID，确保同 Team 下多席位账号互不覆盖
+	identity := tokens.Account.UUID
 	if identity == "" {
-		identity = tokens.Account.UUID
+		identity = tokens.Organization.UUID
 	}
 
 	digest := sha256.Sum256([]byte(identity))
@@ -336,8 +338,12 @@ func (s *service) acquire(session *loginSession, code, callbackID string) error 
 	saveRefreshToken := tokens.RefreshToken
 	if session.mode == modeSetupToken {
 		saveRefreshToken = ""
-		// 固定 365 天 (365*24h)
-		saveExpired = now.Add(365 * 24 * time.Hour).Format(time.RFC3339)
+		// 若上游返回了合法的较短有效秒数（如 90 天等），以较小值为准；否则兜底 365 天 (31536000s)
+		effectiveSeconds := int64(expiresInSetupToken)
+		if tokens.ExpiresIn > 0 && tokens.ExpiresIn < effectiveSeconds {
+			effectiveSeconds = tokens.ExpiresIn
+		}
+		saveExpired = now.Add(time.Duration(effectiveSeconds) * time.Second).Format(time.RFC3339)
 	}
 
 	for key, value := range map[string]any{
@@ -358,7 +364,7 @@ func (s *service) acquire(session *loginSession, code, callbackID string) error 
 	if session.mode == modeSetupToken {
 		credential["is_setup_token"] = true
 		credential["skip_account_profile"] = true
-		credential["scopes"] = "user:inference"
+		credential["scopes"] = scopeSetupToken
 		delete(credential, "refreshToken")
 		delete(credential, "refresh_interval")
 		delete(credential, "refresh_interval_seconds")
@@ -367,6 +373,7 @@ func (s *service) acquire(session *loginSession, code, callbackID string) error 
 	} else {
 		delete(credential, "is_setup_token")
 		delete(credential, "skip_account_profile")
+		credential["scopes"] = scopeOAuth
 	}
 
 	session.credential = credential
@@ -481,7 +488,17 @@ func (s *service) handle(req managementRequest) managementResponse {
 func (s *service) dispatch(method string, body []byte) (any, error) {
 	switch method {
 	case "plugin.register", "plugin.reconfigure":
-		return map[string]any{"schema_version": 6, "metadata": map[string]any{"Name": "Claude Remote Login", "Version": pluginVersion, "Author": "Yousha-dev", "GitHubRepository": "https://github.com/Yousha-dev/claude-remote-login", "ConfigFields": []any{}}, "capabilities": map[string]bool{"management_api": true}}, nil
+		return map[string]any{
+			"schema_version": 6,
+			"metadata": map[string]any{
+				"Name":             "Claude Remote Login",
+				"Version":          pluginVersion,
+				"Author":           "alicecarter199061-hue",
+				"GitHubRepository": "https://github.com/alicecarter199061-hue/claude-ultra-anti-kyc",
+				"ConfigFields":     []any{},
+			},
+			"capabilities": map[string]bool{"management_api": true},
+		}, nil
 	case "management.register":
 		routes := []map[string]string{}
 		for _, action := range []string{"start", "complete", "cancel"} {

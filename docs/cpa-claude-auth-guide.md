@@ -172,7 +172,7 @@ VPS 上已加载并启用了 `claude-remote-login.so` 插件。
 3. 在 **Accounts** 列表中可看到已上线的 Claude 账号，状态为 **Active / Healthy**。
 4. 在本地发起一次测试请求：
    ```bash
-   curl -s http://49.212.144.166:28317/v1/models \
-     -H "Authorization: Bearer 48HdpHIDTDuVgTj9Vw2jLMwgSdDN1aai" | jq .
+   curl -s http://<VPS_IP>:28317/v1/models \
+     -H "Authorization: Bearer <YOUR_CPA_ACCESS_KEY>" | jq .
    ```
    返回列表中出现 `claude-3-5-sonnet-20241022`、`claude-opus-4-5-20251101` 即代表网关代理大功告成！

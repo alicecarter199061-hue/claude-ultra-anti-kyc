@@ -1,34 +1,72 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Claude Remote Login</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Claude Remote Login - CLIProxyAPI</title>
 <style>
-:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#121311;color:#e9eae5;font:16px/1.6 system-ui,sans-serif}main{max-width:760px;margin:48px auto;padding:0 24px}a{color:#9bc6ff}h1{line-height:1.2;font-size:32px}p{color:#afb4a8}section{border:1px solid #35382f;border-radius:12px;padding:24px;margin:20px 0;background:#1a1c17}label{display:block;font-weight:600;margin-bottom:8px}input,textarea{width:100%;background:#11130f;border:1px solid #535b48;border-radius:7px;color:inherit;padding:12px;font:inherit}textarea{min-height:100px;resize:vertical;overflow-wrap:anywhere}button{border:0;border-radius:7px;background:#c5e39d;color:#17200d;padding:12px 18px;font:600 15px system-ui;cursor:pointer;margin:12px 8px 0 0}button.secondary{background:#353b2d;color:#e5ecd9}button:disabled{opacity:.45;cursor:default}.muted{font-size:14px;color:#a0a798}#status{padding:14px;border-radius:8px;background:#242b1d;white-space:pre-wrap}#status.error{background:#492521}code{color:#d5eeb3}#flow[hidden]{display:none}h2{font-size:20px;margin-top:0}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.actions a{padding:10px 0}small{display:block;margin-top:8px}</style></head>
-<body><main><a href="/management.html#/plugins">← Plugin management</a><h1>Claude Remote Login</h1><p>Connect a teammate’s Claude subscription without signing in on this computer. This is a standalone CLIProxyAPI plugin.</p>
-<section><h2>1. Authorize this page</h2>
-<label for="key">Proxy management key</label>
-<input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter the management key">
-<small class="muted">Used only for requests to this proxy. It is not stored in the browser or sent to Claude.</small>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#121311;color:#e9eae5;font:16px/1.6 system-ui,-apple-system,sans-serif}main{max-width:760px;margin:48px auto;padding:0 24px}a{color:#9bc6ff;text-decoration:none}a:hover{text-decoration:underline}h1{line-height:1.2;font-size:32px;margin-bottom:12px}p{color:#afb4a8}section{border:1px solid #35382f;border-radius:12px;padding:24px;margin:20px 0;background:#1a1c17}label{display:block;font-weight:600;margin-bottom:8px}input,textarea{width:100%;background:#11130f;border:1px solid #535b48;border-radius:7px;color:inherit;padding:12px;font:inherit}textarea{min-height:100px;resize:vertical;overflow-wrap:anywhere}button{border:0;border-radius:7px;background:#c5e39d;color:#17200d;padding:12px 18px;font:600 15px system-ui;cursor:pointer;margin:12px 8px 0 0;transition:opacity .15s}button.secondary{background:#353b2d;color:#e5ecd9}button:hover:not(:disabled){opacity:.9}button:disabled{opacity:.45;cursor:default}.muted{font-size:14px;color:#a0a798}#status{padding:14px;border-radius:8px;background:#242b1d;white-space:pre-wrap;margin-top:16px}#status.error{background:#492521;color:#ffcbc7}code{color:#d5eeb3;background:#202519;padding:2px 6px;border-radius:4px}#flow[hidden]{display:none}h2{font-size:20px;margin-top:0}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.actions a{padding:10px 0}small{display:block;margin-top:8px}.tip-box{background:#23271c;border-left:4px solid #c5e39d;padding:10px 14px;border-radius:0 6px 6px 0;margin:12px 0;font-size:14px;color:#d5e0ca}</style></head>
+<body><main><a href="/management.html#/plugins">← 返回插件管理大盘</a><h1>Claude 远程授权登录</h1><p>安全连接 Claude 订阅账号至网关号池，支持 1 年长效免刷新模式，彻底杜绝掉号。</p>
 
-<label style="margin-top:16px">Login mode</label>
-<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
-  <label style="font-weight:normal;display:flex;align-items:center;gap:8px;cursor:pointer">
-    <input type="radio" name="login_mode" value="setup_token" checked style="width:auto">
-    <span><strong>1-Year Long-Lived (Setup-Token, Recommended)</strong> — 365 days expiry, inference-only, zero refresh rotation, completely immune to token-rotation dropping.</span>
+<section><h2>1. 身份验证与登录模式</h2>
+<label for="key">CPA 管理密钥 (Management Key)</label>
+<input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="请输入 CPA 管理密钥">
+<small class="muted">仅用于验证本网关管理权限，不会被浏览器持久化存储，亦绝不发送给第三方。</small>
+
+<label style="margin-top:18px">登录模式选择</label>
+<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px">
+  <label style="font-weight:normal;display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+    <input type="radio" name="login_mode" value="setup_token" checked style="width:auto;margin-top:4px">
+    <span><strong>1 年长效免刷新模式 (Setup-Token，强烈推荐)</strong><br><small class="muted" style="margin-top:2px">有效期 365 天，仅含推理调用权限，彻底关闭后台刷新轮换，永久免疫掉号。<br><span style="color:#d5eeb3">💡 提示：该模式需 Claude Pro / Max / Team / Enterprise 订阅支持（免费账号暂无权限）。</span></small></span>
   </label>
-  <label style="font-weight:normal;display:flex;align-items:center;gap:8px;cursor:pointer">
-    <input type="radio" name="login_mode" value="oauth" style="width:auto">
-    <span><strong>Standard OAuth</strong> — Short-lived token with refresh-token rotation (requires user:profile, subject to rotation race).</span>
+  <label style="font-weight:normal;display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+    <input type="radio" name="login_mode" value="oauth" style="width:auto;margin-top:4px">
+    <span><strong>标准 OAuth 模式 (短期动态轮换)</strong><br><small class="muted" style="margin-top:2px">短期令牌 + Refresh Token 后台自动轮换刷新（需账号具备完整订阅授权）。</small></span>
   </label>
 </div>
 
-<button id="start">Generate sign-in link</button></section>
-<section id="flow" hidden><h2>2. Send the link to your teammate</h2><p>They open this link on their own device and sign in with Microsoft SSO. They then copy the complete authorization code from the final page and send it back to you.</p><label for="link">Sign-in link</label><textarea id="link" readonly spellcheck="false"></textarea><div class="actions"><button id="copy" class="secondary">Copy link</button><a id="open" target="_blank" rel="noopener noreferrer">Open on this device</a></div><p id="expiry" class="muted"></p><h2>3. Connect the account</h2><label for="code">Authorization code</label><input id="code" type="password" autocomplete="off" spellcheck="false" placeholder="Paste the complete code#state"><small class="muted">Use the code from this exact link. A code generated by a separate Claude Code login will not match.</small><button id="complete">Connect account</button><button id="cancel" class="secondary">Cancel login</button></section>
-<p id="status" role="status" aria-live="polite">Ready to generate a sign-in link.</p><p class="muted">Each link lasts 15 minutes. Account credentials are saved by the proxy and join its normal Claude account pool. The built-in OAuth page remains unchanged.</p></main>
+<button id="start">生成授权登录链接</button></section>
+
+<section id="flow" hidden><h2>2. 前往 Claude 官方完成授权</h2>
+<div class="tip-box">
+  ⚠️ <strong>防封提醒</strong>：请确保当前浏览器代理出口 IP 与本 CPA 网关服务器公网出口保持严格同源一致！
+</div>
+<p>请点击下方按钮打开链接（或复制到挂了樱花代理的指纹浏览器中），登录账号并点击 <strong>[Authorize / 同意授权]</strong>。授权成功后，页面将展示一段授权码。</p>
+<label for="link">授权登录链接</label>
+<textarea id="link" readonly spellcheck="false"></textarea>
+<div class="actions">
+  <button id="copy" class="secondary">复制授权链接</button>
+  <a id="open" target="_blank" rel="noopener noreferrer">在当前浏览器直接打开 ↗</a>
+</div>
+<p id="expiry" class="muted"></p>
+
+<h2 style="margin-top:24px">3. 回填授权码并完成连接</h2>
+<label for="code">官方授权码 (Authorization Code)</label>
+<input id="code" type="password" autocomplete="off" spellcheck="false" placeholder="请粘贴页面展示的授权码 (格式如 code#state 或纯 code)">
+<small class="muted">请务必使用上述链接授权后返回的专属 Code，其他独立登录生成的 Code 将无法匹配。</small>
+<button id="complete">确认连接并加入号池</button>
+<button id="cancel" class="secondary">取消本次登录</button>
+</section>
+
+<p id="status" role="status" aria-live="polite">准备就绪，请点击上方按钮生成授权链接。</p>
+<p class="muted">每个链接有效期为 15 分钟。成功连接后，凭据将自动保存至网关 <code>auth/</code> 目录并即刻热加载上线。</p>
+</main>
+
 <script>
 (()=>{const $=id=>document.getElementById(id);const base='/v0/management/plugins/claude-remote-login';let session=null;let busy=false;const message=(text,error=false)=>{$('status').textContent=text;$('status').className=error?'error':''};function toggle(value){busy=value;for(const id of ['start','complete','cancel'])$(id).disabled=value}
-async function call(action,body){const key=$('key').value.trim();if(!key)throw Error('Enter the proxy management key first.');const response=await fetch(base+'/'+action,{method:'POST',headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},credentials:'omit',cache:'no-store',body:JSON.stringify(body)});let data;try{data=await response.json()}catch{throw Error('The proxy returned an invalid response. Check that this plugin is enabled.')}if(!response.ok)throw Error(data.error||(response.status===401?'The management key was rejected.':'Request failed ('+response.status+').'));return data}
-$('start').onclick=async()=>{if(busy)return;toggle(true);try{if(session)await call('cancel',{state:session.state});const mode=document.querySelector('input[name="login_mode"]:checked')?.value||'setup_token';session=await call('start',{mode});$('flow').hidden=false;$('code').value='';$('link').value=session.url;$('open').href=session.url;$('expiry').textContent='Finish before '+new Date(session.expires_at).toLocaleTimeString()+'. Generate a new link for each account.';message('Send the sign-in link to your teammate, then paste their returned authorization code.')}catch(error){message(error.message,true)}finally{toggle(false)}};
-$('copy').onclick=async()=>{try{await navigator.clipboard.writeText($('link').value);message('Sign-in link copied.')}catch{$('link').select();message('Select and copy the sign-in link above.')}};
-$('complete').onclick=async()=>{if(!session||busy)return;toggle(true);try{const result=await call('complete',{state:session.state,code:$('code').value.trim()});$('code').value='';$('link').value='';$('flow').hidden=true;session=null;message('Connected '+result.email+'. This account is now available in the Claude pool.')}catch(error){message(error.message,true)}finally{toggle(false)}};
-$('cancel').onclick=async()=>{if(!session||busy)return;toggle(true);try{await call('cancel',{state:session.state});session=null;$('code').value='';$('link').value='';$('flow').hidden=true;message('Login cancelled.')}catch(error){message(error.message,true)}finally{toggle(false)}};
+async function call(action,body){const key=$('key').value.trim();if(!key)throw Error('请先输入 CPA 管理密钥。');const response=await fetch(base+'/'+action,{method:'POST',headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},credentials:'omit',cache:'no-store',body:JSON.stringify(body)});let data;try{data=await response.json()}catch{throw Error('网关响应异常，请检查插件是否已正确启用。')}if(!response.ok)throw Error(data.error||(response.status===401?'管理密钥被拒绝，请核对密钥。':'请求失败 (HTTP '+response.status+')。'));return data}
+document.querySelectorAll('input[name="login_mode"]').forEach(el=>{
+  el.onchange=()=>{
+    if(session){
+      session=null;
+      $('code').value='';
+      $('link').value='';
+      $('flow').hidden=true;
+      message('已切换登录模式，请重新点击下方按钮生成专属链接。');
+    }
+  };
+});
+
+$('start').onclick=async()=>{if(busy)return;toggle(true);try{if(session)await call('cancel',{state:session.state});const mode=document.querySelector('input[name="login_mode"]:checked')?.value||'setup_token';session=await call('start',{mode});$('flow').hidden=false;$('code').value='';$('link').value=session.url;$('open').href=session.url;$('expiry').textContent='请于 '+new Date(session.expires_at).toLocaleTimeString()+' 前完成授权。每个账号需单独生成链接。';message('请打开授权链接完成登录，并在下方贴回页面展示的授权码。')}catch(error){message(error.message,true)}finally{toggle(false)}};
+$('copy').onclick=async()=>{try{await navigator.clipboard.writeText($('link').value);message('授权链接已复制到剪贴板。')}catch{$('link').select();message('请手动复制上方文本框中的授权链接。')}};
+$('complete').onclick=async()=>{if(!session||busy)return;const codeVal=$('code').value.trim();if(!codeVal){message('请先粘贴授权码。',true);return}toggle(true);try{const result=await call('complete',{state:session.state,code:codeVal});const isSetup=session.mode==='setup_token';$('code').value='';$('link').value='';$('flow').hidden=true;session=null;message('🎉 账号 '+result.email+' 连接成功！已自动加入 Claude 代理号池'+(isSetup?'并锁定 1 年长效免刷新。':'（短期 OAuth 动态轮换）。'))}catch(error){if(!error.message.includes('code')&&!error.message.includes('400')){session=null;$('flow').hidden=true;}$('code').value='';message(error.message,true)}finally{toggle(false)}};
+$('cancel').onclick=async()=>{if(!session||busy)return;toggle(true);try{await call('cancel',{state:session.state});session=null;$('code').value='';$('link').value='';$('flow').hidden=true;message('已取消本次登录。')}catch(error){message(error.message,true)}finally{toggle(false)}};
+
 })();
 </script></body></html>

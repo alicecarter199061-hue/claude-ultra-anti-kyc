@@ -22,17 +22,16 @@
 
 ## 2. 架构决策 (Decision)
 
-我们决定**采纳“路径 B 与路径 C 并行支持，坚决放弃路径 A”**的架构方案：
+我们决定**采纳“C-ABI 动态库插件原生升级 + 服务端 CLI 冗余保障”**的双轮驱动方案：
 
-1. **放弃自行编写 CPA Go 插件**：
-   - CPA 是闭源编译产物，其 Go plugin 机制强依赖于主程序编译时的编译器版本与符号表（ABI 兼容性极差）。自行编写并构建第三方 `.so` 插件极具崩溃风险，维护成本极高。
-2. **采纳 1 年长效 Setup-Token 静态凭据注入**：
-   - 官方 `claude setup-token` 会生成有效期长达 365 天的长效 OAuth Token（`sk-ant-oat01-...`）。
-   - 将其封装为合规的 `auth/claude-<uuid>.json`，将过期时间设定为 1 年后，同时将 `refresh_token` 置空，使得 CPA 彻底免除周期性刷新动作，杜绝单次刷新轮换导致的凭据吊销。
-3. **严格遵守同源出口授权原则 (Same-Egress Authorization)**：
-   - 任何获取或回填授权码的操作，必须在配置了与 Sakura VPS（`49.212.144.166`）同一公网出口的指纹浏览器中完成，严禁以中国大陆直连网络发起 OAuth 授权。
-4. **保留原生 `-claude-login` 与远程登录插件作为备用渠道**：
-   - CPA 自带的标准 OAuth 回调监听 (`127.0.0.1:54545`) 以及内置 `claude-remote-login.so` 插件作为辅助途径，支持用户在需要完整 profile 权限时使用。
+1. **改造 `claude-remote-login` 插件为 v1.1.0 (C-ABI v1 共享库)**：
+   - 经深入源码审阅，该插件并非 Go 内部的 `-buildmode=plugin`，而是标准的 **C-ABI (`-buildmode=c-shared`)** 动态库，具备独立 Go Runtime，零版本符号耦合；
+   - 默认将授权流程切换为 `scope=user:inference` 与 `expires_in=31536000`，放行无 refresh_token 响应，跳过 profile 请求并生成确定性兜底 UUID；
+   - 落盘时写入 `is_setup_token: true`、`skip_account_profile: true` 并将 `refresh_token` 置空，CPA 自动继承指纹并不触发后台刷新轮换；
+   - UI 界面提供全中文引导与 1 年长效 / 标准 OAuth 模式切换。
+
+2. **保留服务端 `cpa-setup-token` 独立命令作为双重保障**：
+   - 作为无头 CLI 场景的备用方案，支持在 VPS 终端直接完成同源交互与落盘。
 
 ---
 

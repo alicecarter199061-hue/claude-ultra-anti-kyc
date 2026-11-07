@@ -485,4 +485,139 @@ func TestSetupTokenEnforcesZeroRefreshAndFixedExpiry(t *testing.T) {
 	}
 }
 
+func TestSetupTokenMultipleTeamSeatsDoNotCollide(t *testing.T) {
+	savedFiles := make(map[string]map[string]any)
+
+	newSeatService := func(accountUUID string) *service {
+		return newService(func(method string, payload any) (json.RawMessage, error) {
+			request := payload.(map[string]any)
+			switch method {
+			case "host.http.do":
+				// 相同 organization.uuid，不同 account.uuid，且无邮箱
+				return raw(upstreamResponse{
+					StatusCode: 200,
+					Body: raw(map[string]any{
+						"access_token": "sk-ant-oat01-seat-" + accountUUID,
+						"expires_in":   31536000,
+						"account": map[string]string{
+							"uuid": accountUUID,
+						},
+						"organization": map[string]string{
+							"uuid": "shared-team-org-uuid",
+							"name": "Acme Team",
+						},
+					}),
+				}), nil
+			case "host.auth.list":
+				return raw(map[string]any{"files": []any{}}), nil
+			case "host.auth.save":
+				fileName := request["name"].(string)
+				var content map[string]any
+				_ = json.Unmarshal(request["json"].(json.RawMessage), &content)
+				savedFiles[fileName] = content
+				return raw(map[string]string{"name": fileName}), nil
+			default:
+				return nil, errors.New("unexpected host call")
+			}
+		})
+	}
+
+	// 席位 1
+	s1 := newSeatService("seat-uuid-1")
+	f1, _ := s1.start()
+	if _, err := s1.complete(f1["state"].(string), "code#"+f1["state"].(string), ""); err != nil {
+		t.Fatal(err)
+	}
+
+	// 席位 2
+	s2 := newSeatService("seat-uuid-2")
+	f2, _ := s2.start()
+	if _, err := s2.complete(f2["state"].(string), "code#"+f2["state"].(string), ""); err != nil {
+		t.Fatal(err)
+	}
+
+	// 必须生成两份完全不同的文件，绝不发生覆盖
+	if len(savedFiles) != 2 {
+		t.Fatalf("expected 2 distinct credential files, got %d", len(savedFiles))
+	}
+
+	var devIDs []string
+	for _, cred := range savedFiles {
+		ids := cred["claude_device_ids"].([]any)
+		devIDs = append(devIDs, ids[0].(string))
+	}
+	// 两个席位的设备指纹必须完全不同
+	if devIDs[0] == devIDs[1] {
+		t.Fatal("device ids between two team seats must not collide")
+	}
+}
+
+func TestSetupTokenDowngradesToOAuthCleansSetupFlags(t *testing.T) {
+	host := &fakeHost{}
+	existingSetupCred := map[string]any{
+		"type":                 "claude",
+		"access_token":         "sk-ant-oat01-old",
+		"is_setup_token":       true,
+		"skip_account_profile": true,
+		"scopes":               "user:inference",
+	}
+
+	identity := "acc-downgrade-1"
+	digest := sha256.Sum256([]byte(identity))
+	existingName := "claude-" + hex.EncodeToString(digest[:])[:8] + "-user@example.com.json"
+
+	s := newService(func(method string, payload any) (json.RawMessage, error) {
+		request := payload.(map[string]any)
+		switch method {
+		case "host.http.do":
+			reqURL := request["url"].(string)
+			if reqURL == tokenURL {
+				return raw(upstreamResponse{
+					StatusCode: 200,
+					Body: raw(map[string]any{
+						"access_token":  "sk-ant-oat01-new-oauth",
+						"refresh_token": "new-refresh-token",
+						"expires_in":    3600,
+						"account": map[string]string{
+							"uuid":          identity,
+							"email_address": "user@example.com",
+						},
+					}),
+				}), nil
+			}
+			return raw(upstreamResponse{StatusCode: 200, Body: raw(map[string]any{})}), nil
+		case "host.auth.list":
+			return raw(map[string]any{
+				"files": []any{map[string]string{"name": existingName, "auth_index": "0"}},
+			}), nil
+		case "host.auth.get":
+			return raw(map[string]any{"json": raw(existingSetupCred)}), nil
+		case "host.auth.save":
+			_ = json.Unmarshal(request["json"].(json.RawMessage), &host.saved)
+			return raw(map[string]string{"name": request["name"].(string)}), nil
+		default:
+			return nil, errors.New("unexpected host call")
+		}
+	})
+
+	// 显式 oauth 模式重新授权
+	flow, _ := s.start("oauth")
+	state := flow["state"].(string)
+	if _, err := s.complete(state, "code#"+state, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	// 验证旧 setup 标记被彻底清理
+	if _, exists := host.saved["is_setup_token"]; exists {
+		t.Fatal("is_setup_token must be removed when switching to oauth")
+	}
+	if _, exists := host.saved["skip_account_profile"]; exists {
+		t.Fatal("skip_account_profile must be removed when switching to oauth")
+	}
+	if host.saved["scopes"] != scopeOAuth {
+		t.Fatalf("expected scopes to be restored to scopeOAuth, got: %v", host.saved["scopes"])
+	}
+}
+
+
 
