@@ -142,17 +142,18 @@ claude
 
 对于使用 **CPA (CLIProxyAPI)** 作为多模型网关的用户，常规短期 OAuth Token（Refresh Token Rotation）极易因为网络刷新竞争或多实例冲突导致“频繁掉号”。
 
-本项目完整支持将官方 Claude CLI 的 **1 年长效 Setup-Token** 免刷新接入 CPA 网关：
+本项目完整支持通过两种最稳妥的方式接入 **1 年长效 Setup-Token**：
 
-1. **同源网络授权**：使用挂载樱花 VPS 代理的指纹浏览器，运行 `claude setup-token` 提取 `sk-ant-oat01-...` 长效令牌。
-2. **一键注入网关**：运行本项目提供的注入脚本：
-   ```bash
-   ./scripts/inject-claude-token-to-cpa.sh
-   ```
-   自动生成合规 JSON 凭据、锁定 365 天有效期并推送到 VPS 的 `/home/debian/cpa/auth/`，CPA 热加载即刻生效，**整整一年彻底免除掉号重新登录的烦恼**！
+1. **升级版 Web 登录插件（首选）**：  
+   直接在指纹浏览器访问：  
+   `http://49.212.144.166:28317/v0/resource/plugins/claude-remote-login/login`  
+   插件已升级为 v1.1.0，默认走 1 年长效 Setup-Token 换码，页面授权后全自动落盘热加载，**零命令行、零刷新轮换、整整一年不掉号**！
+
+2. **服务端全局命令（备选）**：  
+   在 VPS 终端直接执行 `cpa-setup-token`，指纹浏览器同源回填。
 
 📘 深度架构与实操手册：
-- [CPA 网关接入与长效 Key 配置手册 (3种方式对比)](docs/cpa-claude-auth-guide.md)
+- [CPA 网关接入与长效 Key 配置手册 (包含 Web 插件实操)](docs/cpa-claude-auth-guide.md)
 - [ADR 0001: Claude 1年长效 Token 接入 CPA 架构裁决](docs/adr/0001-claude-setup-token-cpa-integration.md)
 - [领域术语表 (Domain Glossary)](GLOSSARY.md)
 

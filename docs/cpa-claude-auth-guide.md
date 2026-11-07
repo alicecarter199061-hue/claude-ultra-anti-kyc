@@ -13,7 +13,34 @@
 
 ---
 
-## ⚡ 极速方案：在 Sakura VPS 服务端一键提取并配入（最推荐）
+## ⚡ 极速方案一：使用升级后的 Web 登录插件（零命令行，最推荐）
+
+我们在 Sakura VPS 上的 CPA 网关已加载全新升级的 **Claude 远程登录插件 v1.1.0**（基于开源插件改造，原生集成 1 年长效 Setup-Token 机制）。
+
+### 操作步骤：
+
+1. **指纹浏览器打开登录插件页**：
+   在您配置了 Sakura VPS 代理（出口为 `49.212.144.166`）的指纹浏览器中，直接访问：
+   ```text
+   http://49.212.144.166:28317/v0/resource/plugins/claude-remote-login/login
+   ```
+2. **输入管理密码并生成链接**：
+   - 输入 CPA 管理密钥；
+   - 登录模式默认已为您选中：**1-Year Long-Lived (Setup-Token, Recommended)**；
+   - 点击 **Generate sign-in link** 生成专属授权链接；
+3. **授权并回填**：
+   - 点击 **Open on this device**（或复制链接）在当前指纹浏览器中打开；
+   - 登录 Claude 订阅账号并点击 **Authorize**；
+   - 将页面最终展示的授权码（类似 `xxxx#yyyy`）复制回填到页面框中，点击 **Connect account**！
+
+🎉 **全自动完成**：
+- 插件服务端在 VPS 本地直接换取 365 天长效令牌；
+- 自动写入 `/home/debian/cpa/auth/claude-<uuid>.json`，将 `refresh_token` 置空，写入 `is_setup_token: true`；
+- CPA 网关即刻热加载上线，**无需触碰任何终端命令，整整一年彻底免掉号！**
+
+---
+
+## 方案二：在 Sakura VPS 服务端命令行一键提取（终端备选）
 
 我们在 Sakura VPS 端已部署了专属交互式工具 `cpa-setup-token`，本地电脑**完全无需安装 Node.js 或 Claude CLI**，直接由 VPS 服务端完成同源签发与热加载。
 
